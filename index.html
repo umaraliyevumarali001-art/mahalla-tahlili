@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mahalla tahlili — Statistik pasport paneli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] } } }
+  };
+</script>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+    --bg: #f1f5f9; --fg: #0f172a;
+    --card: #ffffff; --card-border: #e2e8f0; --card-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(79,70,229,.12);
+    --stat: #f8fafc; --stat-hover: #eef2ff; --stat-hover-border: #c7d2fe;
+    --track: #e2e8f0;
+    --map-bg: #eef2ff; --map-grid: #e0e7ff; --map-zone: #c7d2fe; --map-road: #475569; --map-small: #94a3b8; --map-water: #a5b4fc; --map-house1: #818cf8; --map-house2: #a5b4fc; --map-pinbg: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0b1220; --fg: #e2e8f0;
+    --card: #111a2e; --card-border: #243049; --card-shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --stat: #16213a; --stat-hover: #1e2a4a; --stat-hover-border: #3b4a7a;
+    --track: #243049;
+    --map-bg: #16213a; --map-grid: #1e2a4a; --map-zone: #4f46e5; --map-road: #94a3b8; --map-small: #475569; --map-water: #3730a3; --map-house1: #818cf8; --map-house2: #6366f1; --map-pinbg: #0b1220;
+  }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--fg); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+
+  .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; box-shadow: var(--card-shadow); }
+  .stat { background: var(--stat); border: 1px solid var(--card-border); border-radius: 12px; transition: background .15s ease, border-color .15s ease; }
+  .stat:hover { background: var(--stat-hover); border-color: var(--stat-hover-border); }
+  .bar-track { background: var(--track); border-radius: 999px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; width: 0; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .donut-arc { transition: stroke-dasharray .9s cubic-bezier(.2,.8,.2,1); }
+
+  /* Dark overrides for the few Tailwind utility colours used in markup */
+  :root[data-theme="dark"] .text-slate-900 { color: #f1f5f9; }
+  :root[data-theme="dark"] .text-slate-700 { color: #cbd5e1; }
+  :root[data-theme="dark"] .text-slate-600 { color: #a5b4cb; }
+  :root[data-theme="dark"] .text-slate-500 { color: #94a3b8; }
+  :root[data-theme="dark"] .text-indigo-700 { color: #a5b4fc; }
+  :root[data-theme="dark"] .text-sky-700 { color: #7dd3fc; }
+  :root[data-theme="dark"] .text-rose-600 { color: #fda4af; }
+  :root[data-theme="dark"] .bg-white { background-color: #16213a; }
+  :root[data-theme="dark"] .border-slate-300 { border-color: #334155; }
+  :root[data-theme="dark"] .border-slate-200 { border-color: #243049; }
+  :root[data-theme="dark"] .bg-slate-50 { background-color: #16213a; }
+  :root[data-theme="dark"] .placeholder-slate-400::placeholder { color: #64748b; }
+
+  /* Tinted tones (light + dark) */
+  .tone-indigo { background: #e0e7ff; color: #4338ca; }
+  .tone-sky { background: #e0f2fe; color: #0369a1; }
+  .tone-emerald { background: #d1fae5; color: #047857; }
+  .tone-amber { background: #fef3c7; color: #b45309; }
+  .tone-rose { background: #ffe4e6; color: #be123c; }
+  .tone-violet { background: #ede9fe; color: #6d28d9; }
+  :root[data-theme="dark"] .tone-indigo { background: rgba(99,102,241,.2); color: #a5b4fc; }
+  :root[data-theme="dark"] .tone-sky { background: rgba(14,165,233,.18); color: #7dd3fc; }
+  :root[data-theme="dark"] .tone-emerald { background: rgba(16,185,129,.18); color: #6ee7b7; }
+  :root[data-theme="dark"] .tone-amber { background: rgba(245,158,11,.18); color: #fcd34d; }
+  :root[data-theme="dark"] .tone-rose { background: rgba(244,63,94,.18); color: #fda4af; }
+  :root[data-theme="dark"] .tone-violet { background: rgba(139,92,246,.2); color: #c4b5fd; }
+
+  .ins { border-radius: 12px; border: 1px solid; padding: 14px; display: flex; gap: 12px; }
+  .ins-good { background: #ecfdf5; border-color: #a7f3d0; }
+  .ins-warn { background: #fffbeb; border-color: #fde68a; }
+  .ins-info { background: #eef2ff; border-color: #c7d2fe; }
+  :root[data-theme="dark"] .ins-good { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.35); }
+  :root[data-theme="dark"] .ins-warn { background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.35); }
+  :root[data-theme="dark"] .ins-info { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.4); }
+
+  .pill { background: var(--card); border: 1px solid var(--card-border); border-radius: 999px; transition: all .15s ease; white-space: nowrap; }
+  .pill:hover { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+  .chip { transition: all .15s ease; }
+  .chip:hover { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .badge-indigo { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+  .badge-amber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .badge-emerald { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  :root[data-theme="dark"] .badge-indigo { background: rgba(99,102,241,.18); color: #a5b4fc; border-color: rgba(99,102,241,.4); }
+  :root[data-theme="dark"] .badge-amber { background: rgba(245,158,11,.15); color: #fcd34d; border-color: rgba(245,158,11,.4); }
+  :root[data-theme="dark"] .badge-emerald { background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(16,185,129,.4); }
+
+  .best { color: #059669; font-weight: 700; }
+  :root[data-theme="dark"] .best { color: #6ee7b7; }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pin-pulse { transform-origin: center; transform-box: fill-box; animation: pulse 2s ease-out infinite; }
+  @keyframes pulse { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(2.4); opacity: 0; } }
+  .sk { background: var(--track); border-radius: 12px; animation: skel 1.2s ease-in-out infinite; }
+  @keyframes skel { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  #suggest { box-shadow: 0 12px 32px -8px rgba(15,23,42,.25); }
+  #suggest button[aria-selected="true"] { background: #eef2ff; }
+  :root[data-theme="dark"] #suggest button[aria-selected="true"] { background: #1e2a4a; }
+  #navbar::-webkit-scrollbar { display: none; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .chev { transform: rotate(180deg); }
+  .chev { transition: transform .2s ease; }
+  :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .pin-pulse, .spinner, .sk { animation: none; }
+    .bar-fill, .stat, .donut-arc, .chev { transition: none; }
+  }
+  @media print { header, #navbar, #chips, #searchCard, #toolbar, #editBox { display: none !important; } body { background: #fff; } }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="bg-slate-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center shrink-0" id="brandIcon"></div>
+      <div class="min-w-0">
+        <div class="font-bold leading-tight truncate">Mahalla tahlili</div>
+        <div class="text-xs text-slate-400 truncate">Statistik pasport paneli</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-300 bg-slate-800 rounded-full px-3 py-1.5">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        Prototip: namunaviy ma'lumotlar
+      </div>
+      <button id="themeBtn" type="button" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition" aria-label="Mavzuni almashtirish" title="Mavzuni almashtirish"></button>
+    </div>
+  </div>
+</header>
+
+<!-- Section navigation -->
+<nav id="navbar" class="sticky z-30 border-b overflow-x-auto" style="top: env(safe-area-inset-top, 0px); background: var(--card); border-color: var(--card-border);" aria-label="Bo'limlar">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2 text-sm">
+    <a href="#sec-hero" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Umumiy</a>
+    <a href="#sec-infra" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Infratuzilma</a>
+    <a href="#sec-demo" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Demografiya</a>
+    <a href="#sec-jobs" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Bandlik</a>
+    <a href="#sec-books" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Daftarlar</a>
+    <a href="#sec-insights" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Xulosa</a>
+    <a href="#sec-compare" class="pill px-3.5 py-1.5 text-slate-700 font-medium">Taqqoslash</a>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+  <!-- Search -->
+  <section id="searchCard" class="card p-5 sm:p-6 mb-6" aria-labelledby="searchTitle">
+    <h1 id="searchTitle" class="text-xl sm:text-2xl font-bold text-slate-900">Mahalla bo'yicha hisobot tayyorlang</h1>
+    <p class="text-sm text-slate-500 mt-1 max-w-2xl">Shahar va mahalla nomini yozing. Panel koordinatalar, aholi, bandlik va ijtimoiy daftarlar bo'yicha hisobotni shakllantiradi. Aniq raqamlaringiz bo'lsa, hisobot ostida ularni kiritib, natijani yangilashingiz mumkin.</p>
+
+    <div class="mt-5 flex flex-col md:flex-row gap-3">
+      <div class="relative flex-1">
+        <label for="searchInput" class="sr-only">Shahar va mahalla nomi</label>
+        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" id="searchIcon"></span>
+        <input id="searchInput" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list"
+               value="Marg'ilon shahri, Orolbo'yi MFY" placeholder="Masalan: Qo'qon shahri, Navbahor MFY"
+               class="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+        <div id="suggest" role="listbox" class="hidden absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border overflow-hidden" style="background: var(--card); border-color: var(--card-border);"></div>
+      </div>
+      <button id="analyzeBtn" type="button"
+              class="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition">
+        <span id="btnIcon"></span>
+        <span id="btnText">Haqiqiy tahlilni boshlash</span>
+      </button>
+    </div>
+
+    <div id="chips" class="mt-4 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-slate-500 mr-1">Tezkor tanlov:</span>
+    </div>
+    <div id="recentWrap" class="mt-3 hidden flex-wrap items-center gap-2">
+      <span class="text-xs text-slate-500 mr-1 inline-flex items-center gap-1" id="recentLabel"></span>
+    </div>
+    <p id="msg" class="mt-3 text-sm text-rose-600 hidden" role="alert"></p>
+  </section>
+
+  <!-- Results -->
+  <div id="results" aria-live="polite"></div>
+
+  <!-- Compare -->
+  <div id="sec-compare" class="mt-6"></div>
+
+  <footer class="mt-8 text-xs text-slate-500 leading-relaxed max-w-4xl">
+    <p><strong class="text-slate-700">Muhim eslatma.</strong> Bu prototip. Raqamlar mahalla nomi asosida hisoblab chiqarilgan realistik namunalar bo'lib, rasmiy kadastr yoki statistika bazasidan olinmagan. Xarita sxematik, koordinatalar esa shahar markaziga nisbatan taxminiy. Haqiqiy ma'lumot uchun hisobot ostidagi "Haqiqiy raqamlarni kiritish" bo'limidan foydalaning yoki panelni davlat reyestrlari (Davlat statistika qo'mitasi, Kadastr agentligi, mahalla yagona elektron tizimi) API'lariga ulang.</p>
+  </footer>
+</main>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm shadow-xl opacity-0 pointer-events-none transition-opacity" style="bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);" role="status"></div>
+
+<script>
+/* ================== IKONLAR (Lucide uslubidagi inline SVG) ================== */
+const ICONS = {
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  mapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  store: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
+  pill: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  briefcase: '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  userX: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>',
+  shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  accessibility: '<circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/>',
+  fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  map: '<path d="M14.1 4.5 9 2 3 5v16l6-3 5.1 2.5L21 18V2z"/><path d="M9 2v16"/><path d="M15 4.5v16"/>',
+  compass: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+  layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  building: '<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  lightbulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  table: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  rotate: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>'
+};
+function icon(name, size, cls) {
+  size = size || 20;
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="' + (cls || '') + '" aria-hidden="true">' + ICONS[name] + '</svg>';
+}
+
+/* ================== BRAUZER XOTIRASI (xavfsiz) ================== */
+function store(key, value) {
+  try {
+    if (value === undefined) { const v = window.localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) { return null; }
+  return null;
+}
+
+/* ================== HUDUDLAR BAZASI (taxminiy markaz koordinatalari) ================== */
+const CITIES = [
+  { keys: ["marg'ilon", "margilon", "margilan"], name: "Marg'ilon shahri", lat: 40.4720, lng: 71.7247, region: "Farg'ona viloyati", scale: 1.0 },
+  { keys: ["farg'ona", "fargona", "fergana"], name: "Farg'ona shahri", lat: 40.3864, lng: 71.7864, region: "Farg'ona viloyati", scale: 1.25 },
+  { keys: ["qo'qon", "qoqon", "kokand"], name: "Qo'qon shahri", lat: 40.5286, lng: 70.9425, region: "Farg'ona viloyati", scale: 1.15 },
+  { keys: ["quvasoy", "kuvasay"], name: "Quvasoy shahri", lat: 40.3000, lng: 71.9800, region: "Farg'ona viloyati", scale: 0.85 },
+  { keys: ["rishton", "rishtan"], name: "Rishton tumani", lat: 40.3567, lng: 71.2847, region: "Farg'ona viloyati", scale: 0.9 },
+  { keys: ["oltiariq", "altyaryk"], name: "Oltiariq tumani", lat: 40.3908, lng: 71.4731, region: "Farg'ona viloyati", scale: 0.85 },
+  { keys: ["quva", "kuva"], name: "Quva tumani", lat: 40.5228, lng: 72.0722, region: "Farg'ona viloyati", scale: 0.85 },
+  { keys: ["beshariq", "besharik"], name: "Beshariq tumani", lat: 40.4358, lng: 70.6100, region: "Farg'ona viloyati", scale: 0.85 },
+  { keys: ["toshkent", "tashkent"], name: "Toshkent shahri", lat: 41.2995, lng: 69.2401, region: "Toshkent shahri", scale: 1.6 },
+  { keys: ["chirchiq", "chirchik"], name: "Chirchiq shahri", lat: 41.4689, lng: 69.5822, region: "Toshkent viloyati", scale: 1.0 },
+  { keys: ["samarqand", "samarkand"], name: "Samarqand shahri", lat: 39.6542, lng: 66.9597, region: "Samarqand viloyati", scale: 1.3 },
+  { keys: ["buxoro", "bukhara"], name: "Buxoro shahri", lat: 39.7747, lng: 64.4286, region: "Buxoro viloyati", scale: 1.1 },
+  { keys: ["andijon", "andijan"], name: "Andijon shahri", lat: 40.7821, lng: 72.3442, region: "Andijon viloyati", scale: 1.25 },
+  { keys: ["asaka"], name: "Asaka tumani", lat: 40.6408, lng: 72.2386, region: "Andijon viloyati", scale: 0.9 },
+  { keys: ["shahrixon", "shakhrikhan"], name: "Shahrixon tumani", lat: 40.7133, lng: 72.0561, region: "Andijon viloyati", scale: 0.9 },
+  { keys: ["namangan"], name: "Namangan shahri", lat: 40.9983, lng: 71.6726, region: "Namangan viloyati", scale: 1.25 },
+  { keys: ["chust"], name: "Chust tumani", lat: 41.0000, lng: 71.2333, region: "Namangan viloyati", scale: 0.85 },
+  { keys: ["nukus"], name: "Nukus shahri", lat: 42.4531, lng: 59.6103, region: "Qoraqalpog'iston Respublikasi", scale: 0.95 },
+  { keys: ["qarshi", "karshi"], name: "Qarshi shahri", lat: 38.8606, lng: 65.7891, region: "Qashqadaryo viloyati", scale: 1.0 },
+  { keys: ["termiz", "termez"], name: "Termiz shahri", lat: 37.2242, lng: 67.2783, region: "Surxondaryo viloyati", scale: 0.95 },
+  { keys: ["jizzax", "jizzakh"], name: "Jizzax shahri", lat: 40.1158, lng: 67.8422, region: "Jizzax viloyati", scale: 0.95 },
+  { keys: ["guliston", "gulistan"], name: "Guliston shahri", lat: 40.4897, lng: 68.7842, region: "Sirdaryo viloyati", scale: 0.9 },
+  { keys: ["navoiy", "navoi"], name: "Navoiy shahri", lat: 40.0844, lng: 65.3792, region: "Navoiy viloyati", scale: 0.95 },
+  { keys: ["urganch", "urgench"], name: "Urganch shahri", lat: 41.5500, lng: 60.6333, region: "Xorazm viloyati", scale: 0.95 },
+  { keys: ["xiva", "khiva"], name: "Xiva shahri", lat: 41.3783, lng: 60.3639, region: "Xorazm viloyati", scale: 0.8 }
+];
+const SUGGESTIONS = [
+  "Marg'ilon shahri, Orolbo'yi MFY",
+  "Qo'qon shahri, Navbahor MFY",
+  "Samarqand shahri, Registon MFY",
+  "Toshkent shahri, Yunusobod MFY",
+  "Namangan shahri, Gulshan MFY"
+];
+const DEFAULT_QUERY = "Marg'ilon shahri, Orolbo'yi MFY";
+
+/* ================== YORDAMCHI FUNKSIYALAR ================== */
+function normalize(s) {
+  return String(s).toLowerCase().replace(/[ʻʼ‘’`´]/g, "'").replace(/\s+/g, " ").trim();
+}
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function fmt(n) { return Math.round(n).toLocaleString("ru-RU").replace(/\u00a0/g, " "); }
+function pct(a, b) { return b ? (a / b) * 100 : 0; }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function toTitle(s) { return s.split(" ").map(function (w) { return w ? w.charAt(0).toUpperCase() + w.slice(1) : w; }).join(" "); }
+function lev(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = [], cur = [];
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+let toastTimer = null;
+function toast(text) {
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.style.opacity = "1";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.opacity = "0"; }, 2200);
+}
+
+/* ================== SO'ROVNI TAHLIL QILISH ================== */
+function findCity(norm, firstPart) {
+  for (let i = 0; i < CITIES.length; i++) {
+    for (let k = 0; k < CITIES[i].keys.length; k++) {
+      if (norm.indexOf(normalize(CITIES[i].keys[k])) !== -1) return { city: CITIES[i], fuzzy: false };
+    }
+  }
+  const words = normalize(firstPart).split(/[\s,.;]+/).filter(function (w) { return w.length >= 4; });
+  let best = null, bd = 99;
+  CITIES.forEach(function (c) {
+    c.keys.forEach(function (key) {
+      const k = normalize(key);
+      if (k.length < 4) return;
+      words.forEach(function (w) {
+        const d = lev(w, k);
+        const thr = k.length >= 7 ? 2 : 1;
+        if (d <= thr && d < bd) { bd = d; best = c; }
+      });
+    });
+  });
+  return best ? { city: best, fuzzy: true } : { city: null, fuzzy: false };
+}
+function parseQuery(raw) {
+  const text = raw.trim();
+  const parts = text.split(",").map(function (p) { return p.trim(); }).filter(Boolean);
+  const normAll = normalize(text);
+  const found = findCity(normAll, parts[0] || "");
+  let mahalla = "", cityText = "";
+  parts.forEach(function (p) {
+    const n = normalize(p);
+    if (/(mfy|mahalla|guzar|qishloq|dahasi|ko'cha)/.test(n)) mahalla = mahalla || p;
+    else if (/(shahri|shahar|tumani|viloyati|city)/.test(n)) cityText = cityText || p;
+  });
+  if (!mahalla && parts.length > 1) mahalla = parts[parts.length - 1];
+  if (!mahalla && parts.length === 1) mahalla = parts[0];
+  if (!cityText && parts.length > 1) cityText = parts[0];
+  mahalla = mahalla.replace(/\b(mfy|MFY)\b/gi, "").replace(/\s+/g, " ").trim();
+  if (!mahalla) mahalla = "Markaziy";
+  return { raw: text, norm: normAll, city: found.city, fuzzy: found.fuzzy, cityText: cityText, mahalla: toTitle(mahalla) };
+}
+
+/* ================== ASOSIY (BAZA) QIYMATLARNI HOSIL QILISH ================== */
+function buildBase(q) {
+  const isDefault = normalize(q.raw) === normalize(DEFAULT_QUERY);
+  const seed = hashStr(q.city ? q.city.name + "|" + normalize(q.mahalla) : q.norm);
+  const rnd = mulberry32(seed);
+  const between = function (a, b) { return a + rnd() * (b - a); };
+  const int = function (a, b) { return Math.round(between(a, b)); };
+
+  let lat, lng, cityName, region;
+  if (isDefault) {
+    lat = 40.4794; lng = 71.7006; cityName = "Marg'ilon shahri"; region = "Farg'ona viloyati";
+  } else if (q.city) {
+    lat = q.city.lat + between(-0.035, 0.035);
+    lng = q.city.lng + between(-0.045, 0.045);
+    cityName = q.city.name; region = q.city.region;
+  } else {
+    lat = between(37.3, 45.0); lng = between(56.0, 73.0);
+    cityName = q.cityText ? toTitle(q.cityText) : "Aniqlanmagan hudud";
+    region = "O'zbekiston Respublikasi";
+  }
+  const scale = q.city ? q.city.scale : 1.0;
+
+  const households = isDefault ? 1286 : int(520 * scale, 1750 * scale);
+  const avgHH = isDefault ? 4.9 : between(4.2, 5.7);
+  const population = Math.round(households * avgHH);
+  const male = Math.round(population * between(0.488, 0.508));
+  const minors = Math.round(population * between(0.29, 0.36));
+  const elderly = Math.round(population * between(0.06, 0.105));
+  const working = population - minors - elderly;
+  const labourForce = Math.round(working * between(0.80, 0.88));
+  const unemployed = Math.round(labourForce * between(3.6, 8.4) / 100);
+  const employed = labourForce - unemployed;
+  const female = population - male;
+  const youthPop = Math.round(population * between(0.22, 0.27));
+
+  return {
+    seed: seed, isDefault: isDefault,
+    place: { cityName: cityName, mahalla: q.mahalla, region: region, lat: lat, lng: lng, matched: !!q.city || isDefault, fuzzy: !!q.fuzzy },
+    v: {
+      area: +between(0.45, 2.1).toFixed(2),
+      mainStreets: isDefault ? 6 : int(3, 9),
+      deadEnds: isDefault ? 17 : int(6, 26),
+      households: households,
+      shops: Math.max(4, Math.round(households * between(0.015, 0.035))),
+      pharmacies: Math.max(1, Math.round(households * between(0.0015, 0.004))),
+      services: Math.max(2, Math.round(households * between(0.008, 0.02))),
+      population: population, male: male, minors: minors, elderly: elderly,
+      employed: employed, unemployed: unemployed,
+      migrants: Math.min(employed, Math.round(working * between(0.05, 0.13))),
+      ironBook: Math.max(3, Math.round(households * between(0.014, 0.038))),
+      womenBook: Math.max(5, Math.round(female * between(0.018, 0.045))),
+      youthPop: youthPop,
+      youthBook: Math.max(5, Math.round(youthPop * between(0.03, 0.075))),
+      disabled: Math.max(5, Math.round(population * between(0.016, 0.03)))
+    }
+  };
+}
+
+/* ================== HISOB-KITOB (hosilaviy ko'rsatkichlar) ================== */
+function derive(v) {
+  const female = v.population - v.male;
+  const working = v.population - v.minors - v.elderly;
+  const labourForce = v.employed + v.unemployed;
+  return {
+    infra: { mainStreets: v.mainStreets, deadEnds: v.deadEnds, households: v.households, shops: v.shops, pharmacies: v.pharmacies, services: v.services, area: v.area },
+    demo: { population: v.population, male: v.male, female: female, maleShare: pct(v.male, v.population), femaleShare: pct(female, v.population),
+            minors: v.minors, working: working, elderly: v.elderly, avgHH: v.population / v.households, density: v.population / v.area },
+    jobs: { working: working, labourForce: labourForce, employed: v.employed, employmentRate: pct(v.employed, working),
+            unemployed: v.unemployed, unemploymentRate: pct(v.unemployed, labourForce), migrants: v.migrants },
+    books: { ironBook: v.ironBook, households: v.households, womenBook: v.womenBook, female: female, youthBook: v.youthBook,
+             youthPop: v.youthPop, disabled: v.disabled, population: v.population }
+  };
+}
+
+/* ================== AVTOMATIK XULOSA ================== */
+function buildInsights(r) {
+  const D = r.demo, J = r.jobs, I = r.infra, B = r.books;
+  const list = [];
+  const un = J.unemploymentRate;
+  if (un >= 7) list.push({ tone: "warn", title: "Ishsizlik darajasi yuqori (" + un.toFixed(1) + "%)", text: "Kasb-hunarga o'qitish kurslari, yoshlar va ayollar bandligi dasturlariga ustuvor e'tibor berish tavsiya etiladi." });
+  else if (un <= 4.5) list.push({ tone: "good", title: "Ishsizlik darajasi past (" + un.toFixed(1) + "%)", text: "Mehnat bozori barqaror ko'rinadi. Bandlikni saqlab qolish va sifatli ish o'rinlariga e'tibor qaratish mumkin." });
+  else list.push({ tone: "info", title: "Ishsizlik darajasi o'rtacha (" + un.toFixed(1) + "%)", text: "Ko'rsatkich me'yor chegarasida. Ishsizlar ro'yxatini yoshlar va ayollar kesimida aniqlashtirish foydali bo'ladi." });
+
+  const mig = pct(J.migrants, J.working);
+  if (mig >= 10) list.push({ tone: "warn", title: "Tashqi mehnat migratsiyasi yuqori (" + mig.toFixed(1) + "%)", text: "Migrantlar oilalari bilan ishlash va qaytgan migrantlarni mahalliy bandlikka jalb qilish choralari kerak." });
+  else list.push({ tone: "info", title: "Migratsiya ulushi " + mig.toFixed(1) + "%", text: "Chet elda ishlayotganlar mehnat yoshidagilarning kichik qismini tashkil etadi. Ro'yxatni yangilab borish tavsiya etiladi." });
+
+  const ironShare = pct(B.ironBook, B.households);
+  if (ironShare >= 3) list.push({ tone: "warn", title: "Temir daftarda oilalar ulushi yuqori (" + ironShare.toFixed(1) + "%)", text: "Ijtimoiy himoyaga muhtoj oilalar uchun manzilli yordam va bandlikka ko'maklashish chora-tadbirlarini kuchaytirish zarur." });
+  else list.push({ tone: "good", title: "Temir daftardagi oilalar ulushi " + ironShare.toFixed(1) + "%", text: "Ko'rsatkich nisbatan past. Ro'yxatning dolzarbligini muntazam tekshirib borish kerak." });
+
+  const phPer1000 = I.pharmacies / D.population * 1000;
+  if (phPer1000 < 0.6) list.push({ tone: "warn", title: "Dorixonalar yetarli emas", text: "Har 1000 aholiga " + phPer1000.toFixed(2) + " ta dorixona to'g'ri keladi. Yangi shoxobcha ochish yoki mobil xizmatni yo'lga qo'yish mumkin." });
+  else list.push({ tone: "good", title: "Dorixona bilan ta'minlanish yaxshi", text: "Har 1000 aholiga " + phPer1000.toFixed(2) + " ta dorixona to'g'ri keladi." });
+
+  if (D.avgHH >= 5.3) list.push({ tone: "info", title: "Xonadonlarda zich yashash", text: "Bir xonadonga o'rtacha " + D.avgHH.toFixed(2) + " kishi to'g'ri keladi. Uy-joy sharoitlarini yaxshilash dasturlari dolzarb bo'lishi mumkin." });
+  const elderlyShare = pct(D.elderly, D.population);
+  if (elderlyShare >= 9) list.push({ tone: "info", title: "Keksalar ulushi nisbatan yuqori (" + elderlyShare.toFixed(1) + "%)", text: "Yolg'iz keksalarni qo'llab-quvvatlash va patronaj xizmatlarini rejalashtirish tavsiya etiladi." });
+  return list;
+}
+
+/* ================== SXEMATIK XARITA (SVG) ================== */
+function buildMap(seed, mainStreets) {
+  const rnd = mulberry32(seed ^ 0x9e3779b9);
+  const W = 520, H = 320;
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full h-auto rounded-xl" role="img" aria-label="Mahalla sxematik xaritasi" xmlns="http://www.w3.org/2000/svg">';
+  svg += '<rect width="' + W + '" height="' + H + '" rx="12" style="fill:var(--map-bg)"/>';
+  for (let x = 0; x <= W; x += 40) svg += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + H + '" style="stroke:var(--map-grid)" stroke-width="1"/>';
+  for (let y = 0; y <= H; y += 40) svg += '<line x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '" style="stroke:var(--map-grid)" stroke-width="1"/>';
+  const wy = 40 + rnd() * 60;
+  svg += '<path d="M0 ' + wy.toFixed(0) + ' C 120 ' + (wy - 30).toFixed(0) + ', 260 ' + (wy + 50).toFixed(0) + ', ' + W + ' ' + (wy + 10).toFixed(0) + '" style="stroke:var(--map-water)" stroke-width="9" fill="none" stroke-linecap="round" opacity=".6"/>';
+  const cx = W / 2, cy = H / 2 + 8;
+  const pts = [], n = 9;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, rad = 105 + rnd() * 40;
+    pts.push([cx + Math.cos(a) * rad * 1.35, cy + Math.sin(a) * rad * 0.82]);
+  }
+  svg += '<polygon points="' + pts.map(function (p) { return p[0].toFixed(0) + "," + p[1].toFixed(0); }).join(" ") + '" style="fill:var(--map-zone)" fill-opacity=".35" stroke="#6366f1" stroke-width="2" stroke-dasharray="6 5"/>';
+  const mains = Math.min(mainStreets, 6);
+  for (let i = 0; i < mains; i++) {
+    if (i % 2 === 0) {
+      const y = 70 + (i / 2) * 85 + rnd() * 20;
+      svg += '<line x1="40" y1="' + y.toFixed(0) + '" x2="' + (W - 40) + '" y2="' + (y + (rnd() * 30 - 15)).toFixed(0) + '" style="stroke:var(--map-road)" stroke-width="5" stroke-linecap="round" opacity=".75"/>';
+    } else {
+      const x = 110 + ((i - 1) / 2) * 140 + rnd() * 20;
+      svg += '<line x1="' + x.toFixed(0) + '" y1="24" x2="' + (x + (rnd() * 30 - 15)).toFixed(0) + '" y2="' + (H - 24) + '" style="stroke:var(--map-road)" stroke-width="5" stroke-linecap="round" opacity=".75"/>';
+    }
+  }
+  for (let i = 0; i < 16; i++) {
+    const x = 60 + rnd() * (W - 120), y = 50 + rnd() * (H - 100);
+    const horiz = rnd() > 0.5, len = 30 + rnd() * 40;
+    const x2 = horiz ? x + len : x, y2 = horiz ? y : y + len;
+    svg += '<line x1="' + x.toFixed(0) + '" y1="' + y.toFixed(0) + '" x2="' + x2.toFixed(0) + '" y2="' + y2.toFixed(0) + '" style="stroke:var(--map-small)" stroke-width="3" stroke-linecap="round"/>';
+    for (let k = 0; k < 4; k++) {
+      const t = (k + 0.5) / 4;
+      const hx = horiz ? x + len * t : x + 7, hy = horiz ? y + 7 : y + len * t;
+      const hx2 = horiz ? x + len * t : x - 12, hy2 = horiz ? y - 12 : y + len * t;
+      svg += '<rect x="' + (hx - 3).toFixed(0) + '" y="' + (hy - 3).toFixed(0) + '" width="6" height="6" rx="1.5" style="fill:var(--map-house1)" opacity=".85"/>';
+      svg += '<rect x="' + (hx2 - 3).toFixed(0) + '" y="' + (hy2 - 3).toFixed(0) + '" width="6" height="6" rx="1.5" style="fill:var(--map-house2)" opacity=".85"/>';
+    }
+  }
+  svg += '<g transform="translate(' + cx + ',' + cy + ')"><circle class="pin-pulse" r="10" fill="#4f46e5"/>' +
+    '<path d="M0 -4 C -11 -4 -14 -18 0 -30 C 14 -18 11 -4 0 -4 Z" fill="#4f46e5" stroke="#fff" stroke-width="2"/><circle cx="0" cy="-18" r="4" fill="#fff"/></g>';
+  svg += '<g transform="translate(' + (W - 34) + ',34)"><circle r="16" style="fill:var(--map-pinbg);stroke:var(--map-grid)"/><path d="M0 -10 L5 4 L0 1 L-5 4 Z" fill="#4f46e5"/><text y="14" text-anchor="middle" font-size="8" font-weight="700" fill="#64748b" font-family="Inter, sans-serif">N</text></g>';
+  svg += '</svg>';
+  return svg;
+}
+
+/* ================== UI QISMLARI ================== */
+function bar(label, valueText, percent, color) {
+  const p = Math.max(0, Math.min(100, percent));
+  return '<div><div class="flex items-center justify-between text-sm mb-1.5 gap-3"><span class="text-slate-600">' + label + '</span>' +
+    '<span class="font-semibold text-slate-900 shrink-0">' + valueText + '</span></div>' +
+    '<div class="bar-track"><div class="bar-fill ' + color + '" data-w="' + p.toFixed(1) + '"></div></div></div>';
+}
+function statTile(iconName, label, value, sub, isCount) {
+  const v = isCount ? '<span data-count="' + Math.round(value) + '">0</span>' : value;
+  return '<div class="stat p-3.5"><div class="flex items-center gap-2 text-slate-500 text-xs mb-1.5"><span class="text-indigo-600">' + icon(iconName, 16) + '</span>' + label + '</div>' +
+    '<div class="text-xl font-bold text-slate-900 leading-tight">' + v + '</div>' +
+    (sub ? '<div class="text-xs text-slate-500 mt-0.5">' + sub + '</div>' : '') + '</div>';
+}
+function sectionHead(id, iconName, title, subtitle, tone) {
+  return '<div class="flex items-start gap-3 mb-5"><div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 tone-' + tone + '">' + icon(iconName, 20) + '</div>' +
+    '<div><h2 class="font-bold text-slate-900 leading-tight">' + title + '</h2><p class="text-xs text-slate-500 mt-0.5">' + subtitle + '</p></div></div>';
+}
+function bookCard(iconName, title, desc, count, basis, basisLabel, color, tone) {
+  return '<div class="stat p-4"><div class="flex items-center gap-3 mb-3">' +
+    '<div class="w-9 h-9 rounded-lg flex items-center justify-center tone-' + tone + '">' + icon(iconName, 18) + '</div>' +
+    '<div class="min-w-0"><div class="font-semibold text-slate-900 text-sm leading-tight">' + title + '</div><div class="text-xs text-slate-500">' + desc + '</div></div></div>' +
+    '<div class="flex items-end justify-between mb-2 gap-2"><div class="text-2xl font-extrabold text-slate-900"><span data-count="' + count + '">0</span></div>' +
+    '<div class="text-xs text-slate-500 text-right">' + pct(count, basis).toFixed(1) + '% · ' + basisLabel + '</div></div>' +
+    '<div class="bar-track"><div class="bar-fill ' + color + '" data-w="' + Math.min(100, pct(count, basis) * 6).toFixed(1) + '"></div></div></div>';
+}
+function donut(maleShare) {
+  const C = 2 * Math.PI * 40;
+  const m = (maleShare / 100) * C;
+  return '<svg viewBox="0 0 100 100" class="w-28 h-28 shrink-0" role="img" aria-label="Erkaklar va ayollar ulushi">' +
+    '<circle cx="50" cy="50" r="40" fill="none" stroke="#fb7185" stroke-width="14"/>' +
+    '<circle class="donut-arc" cx="50" cy="50" r="40" fill="none" stroke="#0ea5e9" stroke-width="14" stroke-dasharray="0 ' + C.toFixed(2) + '" data-dash="' + m.toFixed(2) + ' ' + (C - m).toFixed(2) + '" transform="rotate(-90 50 50)"/>' +
+    '</svg>';
+}
+
+/* ================== TAHRIRLASH PANELI ================== */
+const FIELD_GROUPS = [
+  { title: "Infratuzilma", fields: [["area", "Maydon (km²)", true], ["mainStreets", "Asosiy ko'chalar"], ["deadEnds", "Berk ko'chalar"], ["households", "Xonadonlar"], ["shops", "Do'konlar"], ["pharmacies", "Dorixonalar"], ["services", "Maishiy xizmat"]] },
+  { title: "Aholi", fields: [["population", "Jami aholi"], ["male", "Erkaklar"], ["minors", "0–18 yosh"], ["elderly", "Keksalar"], ["youthPop", "Yoshlar soni"]] },
+  { title: "Bandlik", fields: [["employed", "Band bo'lganlar"], ["unemployed", "Ishsizlar"], ["migrants", "Chet elda ishlayotganlar"]] },
+  { title: "Daftarlar", fields: [["ironBook", "Temir daftar"], ["womenBook", "Ayollar daftari"], ["youthBook", "Yoshlar daftari"], ["disabled", "Nogironligi bo'lganlar"]] }
+];
+function editPanel(rep) {
+  let html = '<details id="editBox" class="card p-5 sm:p-6 mt-6"' + (editOpen ? " open" : "") + '>' +
+    '<summary class="flex items-center justify-between gap-3"><span class="flex items-center gap-3"><span class="w-10 h-10 rounded-xl flex items-center justify-center tone-indigo">' + icon("pencil", 20) + '</span>' +
+    '<span><span class="block font-bold text-slate-900 leading-tight">Haqiqiy raqamlarni kiritish</span><span class="block text-xs text-slate-500 mt-0.5">Rasmiy ma\'lumotingiz bo\'lsa, namunaviy raqamlarni almashtiring: barcha foizlar va xulosa qayta hisoblanadi</span></span></span>' +
+    '<span class="chev text-slate-500">' + icon("chevron", 20) + '</span></summary>';
+  html += '<div class="mt-5 space-y-5">';
+  FIELD_GROUPS.forEach(function (g) {
+    html += '<div><h3 class="text-sm font-semibold text-slate-700 mb-2">' + g.title + '</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-3">';
+    g.fields.forEach(function (f) {
+      html += '<label class="block text-xs text-slate-500">' + f[1] +
+        '<input id="f_' + f[0] + '" type="number" min="0" step="' + (f[2] ? "0.01" : "1") + '" value="' + rep.v[f[0]] + '" class="mt-1 w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"></label>';
+    });
+    html += '</div></div>';
+  });
+  html += '<p id="editErr" class="text-sm text-rose-600 hidden" role="alert"></p>' +
+    '<div class="flex flex-wrap gap-3"><button type="button" data-action="apply-edit" class="h-10 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">Hisobotni yangilash</button>' +
+    '<button type="button" data-action="reset-edit" class="h-10 px-5 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold inline-flex items-center gap-2 hover:border-indigo-400 transition">' + icon("rotate", 16) + 'Namunaviy qiymatlarga qaytish</button></div>';
+  html += '</div></details>';
+  return html;
+}
+
+/* ================== HISOBOTNI CHIZISH ================== */
+function renderReport(rep) {
+  const p = rep.place, I = rep.infra, D = rep.demo, J = rep.jobs, B = rep.books;
+  const mainShare = pct(I.mainStreets, I.mainStreets + I.deadEnds);
+  const coordText = Math.abs(p.lat).toFixed(4) + "° " + (p.lat >= 0 ? "N" : "S") + ", " + Math.abs(p.lng).toFixed(4) + "° " + (p.lng >= 0 ? "E" : "W");
+  const today = new Date().toLocaleDateString("ru-RU");
+  const inCompare = compareList.some(function (c) { return c.id === rep.id; });
+
+  let html = '';
+
+  /* Hero */
+  html += '<section id="sec-hero" class="card p-5 sm:p-6 mb-6"><div class="flex flex-col lg:flex-row gap-6">' +
+    '<div class="flex-1 min-w-0">' +
+      '<div class="flex flex-wrap items-center gap-2 text-xs mb-3">' +
+        '<span class="inline-flex items-center gap-1.5 badge-indigo rounded-full px-2.5 py-1 font-medium">' + icon("fileText", 14) + 'Statistik pasport hisoboti</span>' +
+        (rep.edited ? '<span class="inline-flex items-center gap-1.5 badge-emerald rounded-full px-2.5 py-1 font-medium">' + icon("check", 14) + 'Qo\'lda kiritilgan ma\'lumot</span>'
+                    : '<span class="inline-flex items-center gap-1.5 badge-amber rounded-full px-2.5 py-1 font-medium">' + icon("info", 14) + 'Namunaviy hisob</span>') +
+        '<span class="text-slate-500">Sana: ' + today + '</span>' +
+        (!p.matched ? '<span class="badge-amber rounded-full px-2.5 py-1">Shahar bazadan topilmadi: koordinata taxminiy</span>' : '') +
+        (p.fuzzy ? '<span class="badge-indigo rounded-full px-2.5 py-1">Nom imlosi taxminan moslashtirildi: ' + esc(p.cityName) + '</span>' : '') +
+      '</div>' +
+      '<h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight break-words">' + esc(p.mahalla) + ' MFY</h2>' +
+      '<p class="text-slate-500 mt-1">' + esc(p.cityName) + ', ' + esc(p.region) + '</p>' +
+      '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">' +
+        statTile("users", "Jami aholi", D.population, "kishi", true) +
+        statTile("home", "Xonadonlar", I.households, "hovli va uy", true) +
+        statTile("briefcase", "Bandlik darajasi", J.employmentRate.toFixed(1) + "%", "mehnat yoshidagilardan", false) +
+        statTile("userX", "Ishsizlik darajasi", J.unemploymentRate.toFixed(1) + "%", "mehnat resurslaridan", false) +
+      '</div>' +
+      '<div id="toolbar" class="flex flex-wrap gap-3 mt-5">' +
+        '<button type="button" data-action="copy" class="h-10 px-4 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold inline-flex items-center gap-2 hover:border-indigo-400 transition">' + icon("copy", 16) + 'Hisobotni nusxalash</button>' +
+        '<button type="button" data-action="add-compare" class="h-10 px-4 rounded-lg ' + (inCompare ? 'bg-indigo-600 text-white' : 'border border-slate-300 text-slate-700') + ' text-sm font-semibold inline-flex items-center gap-2 hover:border-indigo-400 transition">' + icon(inCompare ? "check" : "plus", 16) + (inCompare ? 'Taqqoslashda (yangilash)' : 'Taqqoslashga qo\'shish') + '</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="lg:w-[420px] shrink-0">' + buildMap(rep.seed, I.mainStreets) +
+      '<div class="flex items-center justify-between mt-2 text-xs text-slate-500 gap-2">' +
+        '<span class="inline-flex items-center gap-1.5 text-indigo-700 font-medium">' + icon("mapPin", 14) + coordText + '</span>' +
+        '<span>Sxematik ko\'rinish · ~' + I.area.toFixed(2) + ' km²</span>' +
+      '</div>' +
+    '</div></div></section>';
+
+  html += '<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">';
+
+  /* 1-blok */
+  html += '<section id="sec-infra" class="card p-5 sm:p-6">' +
+    sectionHead("infra", "map", "Infratuzilma va xarita ma'lumotlari", "Koordinatalar, ko'chalar, xonadonlar va xizmat shoxobchalari", "indigo") +
+    '<div class="grid grid-cols-2 gap-3">' +
+      '<div class="stat p-3.5 col-span-2"><div class="flex items-center gap-2 text-slate-500 text-xs mb-1.5"><span class="text-indigo-600">' + icon("compass", 16) + '</span>Geografik koordinatalar</div><div class="text-lg font-bold text-slate-900">' + coordText + '</div></div>' +
+      statTile("route", "Asosiy ko'chalar", I.mainStreets, "ta", true) +
+      statTile("route", "Ichki berk ko'chalar", I.deadEnds, "ta", true) +
+      statTile("home", "Jami xonadonlar", I.households, "hovlilar va uylar", true) +
+      statTile("layers", "Maydon", "~" + I.area.toFixed(2) + " km²", rep.edited ? "kiritilgan" : "taxminiy", false) +
+    '</div>' +
+    '<div class="mt-5 space-y-4">' + bar("Asosiy ko'chalar ulushi", mainShare.toFixed(1) + "%", mainShare, "bg-indigo-500") + '</div>' +
+    '<h3 class="text-sm font-semibold text-slate-700 mt-6 mb-3">Xizmat shoxobchalari</h3>' +
+    '<div class="grid grid-cols-3 gap-3">' +
+      statTile("store", "Do'konlar", I.shops, "", true) +
+      statTile("pill", "Dorixonalar", I.pharmacies, "", true) +
+      statTile("wrench", "Maishiy xizmat", I.services, "", true) +
+    '</div>' +
+    '<div class="mt-4 space-y-4">' +
+      bar("Do'konlar: har 100 xonadonga", (I.shops / I.households * 100).toFixed(1), Math.min(100, I.shops / I.households * 100 * 25), "bg-sky-500") +
+      bar("Dorixonalar: har 1000 aholiga", (I.pharmacies / D.population * 1000).toFixed(2), Math.min(100, I.pharmacies / D.population * 1000 * 40), "bg-emerald-500") +
+    '</div></section>';
+
+  /* 2-blok */
+  html += '<section id="sec-demo" class="card p-5 sm:p-6">' +
+    sectionHead("demo", "users", "Demografik ko'rsatkichlar", "Jinsiy va yosh tarkibi, aholi zichligi", "sky") +
+    '<div class="stat p-4 mb-4"><div class="flex items-center gap-4">' + donut(D.maleShare) +
+      '<div class="flex-1 min-w-0"><div class="text-xs text-slate-500">Jami aholi</div><div class="text-3xl font-extrabold text-slate-900"><span data-count="' + D.population + '">0</span></div>' +
+      '<div class="mt-2 space-y-1 text-xs">' +
+        '<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:#0ea5e9"></span><span class="text-slate-600">Erkaklar:</span><span class="font-semibold text-slate-900">' + fmt(D.male) + ' (' + D.maleShare.toFixed(1) + '%)</span></div>' +
+        '<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:#fb7185"></span><span class="text-slate-600">Ayollar:</span><span class="font-semibold text-slate-900">' + fmt(D.female) + ' (' + D.femaleShare.toFixed(1) + '%)</span></div>' +
+      '</div></div></div></div>' +
+    '<div class="space-y-4">' +
+      bar("Voyaga yetmaganlar (0–18 yosh): " + fmt(D.minors), pct(D.minors, D.population).toFixed(1) + "%", pct(D.minors, D.population), "bg-violet-500") +
+      bar("Mehnat yoshidagilar: " + fmt(D.working), pct(D.working, D.population).toFixed(1) + "%", pct(D.working, D.population), "bg-indigo-500") +
+      bar("Keksalar (pensiya yoshi): " + fmt(D.elderly), pct(D.elderly, D.population).toFixed(1) + "%", pct(D.elderly, D.population), "bg-amber-500") +
+    '</div>' +
+    '<div class="grid grid-cols-2 gap-3 mt-5">' +
+      statTile("home", "Aholi / xonadon", D.avgHH.toFixed(2), "o'rtacha zichlik", false) +
+      statTile("building", "Aholi zichligi", fmt(D.density), "kishi / km²", false) +
+    '</div></section>';
+
+  /* 3-blok */
+  html += '<section id="sec-jobs" class="card p-5 sm:p-6">' +
+    sectionHead("jobs", "briefcase", "Bandlik va mehnat resurslari", "Band va ishsiz aholi, tashqi mehnat migratsiyasi", "emerald") +
+    '<div class="grid grid-cols-2 gap-3">' +
+      statTile("users", "Mehnat yoshidagilar", J.working, "kishi", true) +
+      statTile("briefcase", "Band bo'lganlar", J.employed, "kishi", true) +
+      statTile("userX", "Ishsizlar", J.unemployed, "kishi", true) +
+      statTile("globe", "Chet elda ishlayotganlar", J.migrants, "migrantlar", true) +
+    '</div>' +
+    '<div class="mt-5 space-y-4">' +
+      bar("Bandlik darajasi (mehnat yoshidagilardan)", J.employmentRate.toFixed(1) + "%", J.employmentRate, "bg-emerald-500") +
+      bar("Ishsizlik darajasi (mehnat resurslaridan)", J.unemploymentRate.toFixed(1) + "%", Math.min(100, J.unemploymentRate * 5), "bg-rose-500") +
+      bar("Migrantlar (mehnat yoshidagilardan)", pct(J.migrants, J.working).toFixed(1) + "%", Math.min(100, pct(J.migrants, J.working) * 5), "bg-sky-500") +
+    '</div>' +
+    '<p class="text-xs text-slate-500 mt-4 leading-relaxed">Ishsizlik darajasi mehnat resurslari (band + ishsiz) ichidagi ulush sifatida, bandlik darajasi esa butun mehnat yoshidagilar ichida hisoblanadi. Migrantlar band bo\'lganlar tarkibiga kiradi.</p>' +
+  '</section>';
+
+  /* 4-blok */
+  html += '<section id="sec-books" class="card p-5 sm:p-6">' +
+    sectionHead("books", "shield", "Ijtimoiy daftarlar va imtiyozli qatlam", "Rasmiy pasport standartidagi ro'yxatlar", "amber") +
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+      bookCard("shield", "Temir daftar", "Ijtimoiy himoyaga muhtoj oilalar", B.ironBook, B.households, "xonadonlardan", "bg-rose-500", "rose") +
+      bookCard("heart", "Ayollar daftari", "Yordamga muhtoj xotin-qizlar", B.womenBook, B.female, "ayollardan", "bg-violet-500", "violet") +
+      bookCard("zap", "Yoshlar daftari", "Qo'llab-quvvatlanishi kerak yoshlar", B.youthBook, B.youthPop, "yoshlardan", "bg-sky-500", "sky") +
+      bookCard("accessibility", "Nogironligi bo'lgan shaxslar", "Ro'yxatdagi shaxslar", B.disabled, B.population, "aholidan", "bg-amber-500", "amber") +
+    '</div></section>';
+
+  html += '</div>';
+
+  /* Xulosa */
+  html += '<section id="sec-insights" class="card p-5 sm:p-6 mt-6">' +
+    sectionHead("ins", "lightbulb", "Avtomatik xulosa va tavsiyalar", "Ko'rsatkichlar asosida shakllantirilgan qisqa tahlil", "indigo") +
+    '<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">';
+  buildInsights(rep).forEach(function (it) {
+    const ic = it.tone === "good" ? "check" : it.tone === "warn" ? "alert" : "info";
+    const tc = it.tone === "good" ? "tone-emerald" : it.tone === "warn" ? "tone-amber" : "tone-indigo";
+    html += '<div class="ins ins-' + it.tone + '"><div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ' + tc + '">' + icon(ic, 18) + '</div>' +
+      '<div><div class="font-semibold text-slate-900 text-sm">' + it.title + '</div><div class="text-sm text-slate-600 mt-0.5 leading-relaxed">' + it.text + '</div></div></div>';
+  });
+  html += '</div><p class="text-xs text-slate-500 mt-4">Baholash chegaralari prototipga xos ichki me\'yorlar; ularni rasmiy me\'yoriy hujjatlar bilan almashtirish kerak.</p></section>';
+
+  html += editPanel(rep);
+  return html;
+}
+
+/* ================== TAQQOSLASH ================== */
+const COMPARE_ROWS = [
+  { label: "Jami aholi", key: "pop", f: function (x) { return fmt(x); }, better: null },
+  { label: "Xonadonlar", key: "hh", f: function (x) { return fmt(x); }, better: null },
+  { label: "Xonadonga o'rtacha aholi", key: "avgHH", f: function (x) { return x.toFixed(2); }, better: null },
+  { label: "Bandlik darajasi", key: "empRate", f: function (x) { return x.toFixed(1) + "%"; }, better: "high" },
+  { label: "Ishsizlik darajasi", key: "unRate", f: function (x) { return x.toFixed(1) + "%"; }, better: "low" },
+  { label: "Migrantlar ulushi", key: "migRate", f: function (x) { return x.toFixed(1) + "%"; }, better: null },
+  { label: "Temir daftar (xonadonlardan)", key: "ironRate", f: function (x) { return x.toFixed(1) + "%"; }, better: "low" },
+  { label: "Ayollar daftari", key: "women", f: function (x) { return fmt(x); }, better: null },
+  { label: "Yoshlar daftari", key: "youth", f: function (x) { return fmt(x); }, better: null },
+  { label: "Nogironligi bo'lgan shaxslar", key: "disabled", f: function (x) { return fmt(x); }, better: null }
+];
+function snapshot(rep) {
+  return {
+    id: rep.id, title: rep.place.mahalla + " MFY", sub: rep.place.cityName, edited: !!rep.edited,
+    pop: rep.demo.population, hh: rep.infra.households, avgHH: rep.demo.avgHH,
+    empRate: rep.jobs.employmentRate, unRate: rep.jobs.unemploymentRate,
+    migRate: pct(rep.jobs.migrants, rep.jobs.working),
+    ironRate: pct(rep.books.ironBook, rep.books.households),
+    women: rep.books.womenBook, youth: rep.books.youthBook, disabled: rep.books.disabled
+  };
+}
+function renderCompare() {
+  const el = document.getElementById("sec-compare");
+  let html = '<section class="card p-5 sm:p-6"><div class="flex items-start justify-between gap-3 mb-5">' +
+    '<div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 tone-sky">' + icon("table", 20) + '</div>' +
+    '<div><h2 class="font-bold text-slate-900 leading-tight">Mahallalarni taqqoslash</h2><p class="text-xs text-slate-500 mt-0.5">Hisobotdagi "Taqqoslashga qo\'shish" tugmasi orqali 4 tagacha mahalla tanlang</p></div></div>';
+  if (compareList.length) html += '<button type="button" data-action="clear-compare" class="text-xs text-slate-500 hover:text-rose-600 font-medium shrink-0">Tozalash</button>';
+  html += '</div>';
+  if (!compareList.length) {
+    html += '<div class="stat p-6 text-center text-sm text-slate-500">Hozircha hech narsa tanlanmagan. Yuqoridagi hisobotdan mahallani qo\'shing, so\'ng boshqa mahalla uchun tahlil qilib, ularni yonma-yon ko\'ring.</div>';
+  } else {
+    html += '<div class="overflow-x-auto"><table class="w-full text-sm min-w-[480px]"><thead><tr class="border-b border-slate-200"><th class="text-left py-2.5 pr-3 font-medium text-slate-500">Ko\'rsatkich</th>';
+    compareList.forEach(function (c) {
+      html += '<th class="text-left py-2.5 px-3 align-top"><div class="flex items-start justify-between gap-2"><div><div class="font-bold text-slate-900">' + esc(c.title) + '</div><div class="text-xs font-normal text-slate-500">' + esc(c.sub) + (c.edited ? ' · kiritilgan' : ' · namunaviy') + '</div></div>' +
+        '<button type="button" data-action="remove-compare" data-id="' + esc(c.id) + '" class="text-slate-400 hover:text-rose-600" aria-label="Olib tashlash">' + icon("x", 16) + '</button></div></th>';
+    });
+    html += '</tr></thead><tbody>';
+    COMPARE_ROWS.forEach(function (row) {
+      let bestVal = null;
+      if (row.better && compareList.length > 1) {
+        const vals = compareList.map(function (c) { return c[row.key]; });
+        bestVal = row.better === "low" ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+      }
+      html += '<tr class="border-b border-slate-200"><td class="py-2.5 pr-3 text-slate-600">' + row.label + '</td>';
+      compareList.forEach(function (c) {
+        const isBest = bestVal !== null && c[row.key] === bestVal;
+        html += '<td class="py-2.5 px-3 ' + (isBest ? 'best' : 'text-slate-900 font-medium') + '">' + row.f(c[row.key]) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    if (compareList.length > 1) html += '<p class="text-xs text-slate-500 mt-3">Yashil rang bandlik va ijtimoiy ko\'rsatkichlar bo\'yicha eng yaxshi qiymatni bildiradi.</p>';
+  }
+  html += '</section>';
+  el.innerHTML = html;
+}
+
+/* ================== ANIMATSIYA ================== */
+function animateCounts(root) {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  root.querySelectorAll("[data-count]").forEach(function (el) {
+    const target = parseInt(el.getAttribute("data-count"), 10) || 0;
+    if (reduce) { el.textContent = fmt(target); return; }
+    const dur = 900, start = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - start) / dur);
+      el.textContent = fmt(target * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(tick); else el.textContent = fmt(target);
+    }
+    requestAnimationFrame(tick);
+  });
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      root.querySelectorAll(".bar-fill").forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; });
+      root.querySelectorAll("[data-dash]").forEach(function (c) { c.setAttribute("stroke-dasharray", c.getAttribute("data-dash")); });
+    });
+  });
+}
+
+/* ================== HOLAT ================== */
+const resultsEl = document.getElementById("results");
+const inputEl = document.getElementById("searchInput");
+const btnEl = document.getElementById("analyzeBtn");
+const btnText = document.getElementById("btnText");
+const btnIcon = document.getElementById("btnIcon");
+const msgEl = document.getElementById("msg");
+const suggestEl = document.getElementById("suggest");
+let busy = false;
+let current = null;
+let editOpen = false;
+let compareList = [];
+let recent = [];
+
+function makeReport(query) {
+  const q = parseQuery(query);
+  const b = buildBase(q);
+  const rep = { id: normalize(b.place.cityName + " " + b.place.mahalla), query: query, seed: b.seed, place: b.place, v: b.v, baseV: JSON.parse(JSON.stringify(b.v)), edited: false };
+  return rep;
+}
+function refresh(rep) {
+  const d = derive(rep.v);
+  rep.infra = d.infra; rep.demo = d.demo; rep.jobs = d.jobs; rep.books = d.books;
+  return rep;
+}
+function showReport(rep, animate) {
+  refresh(rep);
+  current = rep;
+  resultsEl.innerHTML = renderReport(rep);
+  if (animate !== false) animateCounts(resultsEl);
+  else animateCounts(resultsEl);
+  const box = document.getElementById("editBox");
+  if (box) box.addEventListener("toggle", function () { editOpen = box.open; });
+}
+
+/* Hisobot matni (nusxalash uchun) */
+function reportText(rep) {
+  const p = rep.place, I = rep.infra, D = rep.demo, J = rep.jobs, B = rep.books;
+  const lines = [];
+  lines.push(p.mahalla + " MFY — " + p.cityName + ", " + p.region);
+  lines.push("Ma'lumot holati: " + (rep.edited ? "qo'lda kiritilgan" : "namunaviy hisob (rasmiy manbadan emas)"));
+  lines.push("");
+  lines.push("1. INFRATUZILMA");
+  lines.push("Koordinatalar: " + p.lat.toFixed(4) + "° N, " + p.lng.toFixed(4) + "° E");
+  lines.push("Asosiy ko'chalar: " + I.mainStreets + "; berk ko'chalar: " + I.deadEnds);
+  lines.push("Xonadonlar: " + fmt(I.households));
+  lines.push("Do'konlar: " + I.shops + "; dorixonalar: " + I.pharmacies + "; maishiy xizmat: " + I.services);
+  lines.push("");
+  lines.push("2. DEMOGRAFIYA");
+  lines.push("Jami aholi: " + fmt(D.population));
+  lines.push("Erkaklar: " + fmt(D.male) + " (" + D.maleShare.toFixed(1) + "%); ayollar: " + fmt(D.female) + " (" + D.femaleShare.toFixed(1) + "%)");
+  lines.push("0–18 yosh: " + fmt(D.minors) + "; mehnat yoshida: " + fmt(D.working) + "; keksalar: " + fmt(D.elderly));
+  lines.push("Xonadonga o'rtacha: " + D.avgHH.toFixed(2) + " kishi");
+  lines.push("");
+  lines.push("3. BANDLIK");
+  lines.push("Band: " + fmt(J.employed) + " (" + J.employmentRate.toFixed(1) + "%); ishsiz: " + fmt(J.unemployed) + " (" + J.unemploymentRate.toFixed(1) + "%)");
+  lines.push("Chet elda ishlayotganlar: " + fmt(J.migrants));
+  lines.push("");
+  lines.push("4. IJTIMOIY DAFTARLAR");
+  lines.push("Temir daftar: " + fmt(B.ironBook) + " oila");
+  lines.push("Ayollar daftari: " + fmt(B.womenBook) + " nafar");
+  lines.push("Yoshlar daftari: " + fmt(B.youthBook) + " nafar");
+  lines.push("Nogironligi bo'lgan shaxslar: " + fmt(B.disabled) + " nafar");
+  return lines.join("\n");
+}
+function copyText(text) {
+  function fallback() {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok ? "Hisobot nusxalandi" : "Nusxalab bo'lmadi");
+    } catch (e) { toast("Nusxalab bo'lmadi"); }
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast("Hisobot nusxalandi"); }, fallback);
+    } else fallback();
+  } catch (e) { fallback(); }
+}
+
+/* Tahrirlash */
+function applyEdit() {
+  const errEl = document.getElementById("editErr");
+  const nv = {};
+  let bad = null;
+  FIELD_GROUPS.forEach(function (g) {
+    g.fields.forEach(function (f) {
+      const raw = document.getElementById("f_" + f[0]).value;
+      const num = parseFloat(raw);
+      if (raw === "" || isNaN(num) || num < 0) bad = bad || ("\"" + f[1] + "\" maydoniga musbat son kiriting.");
+      nv[f[0]] = f[2] ? num : Math.round(num);
+    });
+  });
+  if (!bad) {
+    if (nv.households < 1 || nv.population < 1 || nv.area <= 0) bad = "Xonadonlar, aholi va maydon noldan katta bo'lishi kerak.";
+    else if (nv.male > nv.population) bad = "Erkaklar soni jami aholidan oshib ketdi.";
+    else if (nv.minors + nv.elderly > nv.population) bad = "Voyaga yetmaganlar va keksalar yig'indisi jami aholidan oshib ketdi.";
+    else if (nv.migrants > nv.employed) bad = "Migrantlar soni band bo'lganlardan oshib ketdi (migrantlar band bo'lganlar tarkibiga kiradi).";
+    else if (nv.employed + nv.unemployed > nv.population - nv.minors - nv.elderly) bad = "Band va ishsizlar yig'indisi mehnat yoshidagilardan oshib ketdi.";
+  }
+  if (bad) { errEl.textContent = bad; errEl.classList.remove("hidden"); return; }
+  current.v = nv;
+  current.edited = true;
+  editOpen = true;
+  showReport(current);
+  toast("Hisobot yangilandi");
+}
+function resetEdit() {
+  current.v = JSON.parse(JSON.stringify(current.baseV));
+  current.edited = false;
+  editOpen = true;
+  showReport(current);
+  toast("Namunaviy qiymatlar tiklandi");
+}
+
+/* Taqqoslash */
+function addCompare() {
+  const s = snapshot(current);
+  const idx = compareList.findIndex(function (c) { return c.id === s.id; });
+  if (idx >= 0) compareList[idx] = s;
+  else {
+    if (compareList.length >= 4) { toast("Eng ko'pi bilan 4 ta mahalla taqqoslanadi"); return; }
+    compareList.push(s);
+  }
+  store("mt_compare", compareList);
+  renderCompare();
+  showReport(current);
+  toast("Taqqoslashga qo'shildi");
+}
+
+/* Delegatsiya */
+document.addEventListener("click", function (e) {
+  const t = e.target.closest("[data-action]");
+  if (!t) return;
+  const a = t.getAttribute("data-action");
+  if (a === "copy" && current) copyText(reportText(current));
+  else if (a === "add-compare" && current) addCompare();
+  else if (a === "apply-edit" && current) applyEdit();
+  else if (a === "reset-edit" && current) resetEdit();
+  else if (a === "remove-compare") {
+    const id = t.getAttribute("data-id");
+    compareList = compareList.filter(function (c) { return c.id !== id; });
+    store("mt_compare", compareList);
+    renderCompare();
+    if (current) showReport(current);
+  } else if (a === "clear-compare") {
+    compareList = [];
+    store("mt_compare", compareList);
+    renderCompare();
+    if (current) showReport(current);
+  }
+});
+
+/* ================== TAKLIFLAR (AUTOCOMPLETE) ================== */
+let sugItems = [], sugIndex = -1;
+function buildSuggestions(text) {
+  const n = normalize(text);
+  const items = [];
+  const seen = {};
+  function add(label, value, run, hint) {
+    if (seen[value]) return;
+    seen[value] = true;
+    items.push({ label: label, value: value, run: run, hint: hint });
+  }
+  if (!n) {
+    recent.forEach(function (r) { add(r, r, true, "Oxirgi"); });
+    SUGGESTIONS.forEach(function (s) { add(s, s, true, "Namuna"); });
+  } else {
+    const first = n.split(",")[0].trim();
+    if (n.indexOf(",") === -1) {
+      CITIES.forEach(function (c) {
+        const hit = c.keys.some(function (k) { return normalize(k).indexOf(first) === 0; }) || normalize(c.name).indexOf(first) === 0;
+        if (hit) add(c.name, c.name + ", ", false, c.region);
+      });
+    }
+    recent.concat(SUGGESTIONS).forEach(function (s) {
+      if (normalize(s).indexOf(n) !== -1) add(s, s, true, "Tayyor so'rov");
+    });
+  }
+  return items.slice(0, 7);
+}
+function openSuggest() {
+  sugItems = buildSuggestions(inputEl.value);
+  sugIndex = -1;
+  if (!sugItems.length) { closeSuggest(); return; }
+  suggestEl.innerHTML = sugItems.map(function (it, i) {
+    return '<button type="button" role="option" aria-selected="false" data-i="' + i + '" class="w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 text-sm">' +
+      '<span class="text-slate-900 truncate">' + esc(it.label) + '</span><span class="text-xs text-slate-500 shrink-0">' + esc(it.hint) + '</span></button>';
+  }).join("");
+  suggestEl.classList.remove("hidden");
+  inputEl.setAttribute("aria-expanded", "true");
+}
+function closeSuggest() {
+  suggestEl.classList.add("hidden");
+  inputEl.setAttribute("aria-expanded", "false");
+  sugIndex = -1;
+}
+function highlight() {
+  suggestEl.querySelectorAll("button").forEach(function (b, i) { b.setAttribute("aria-selected", i === sugIndex ? "true" : "false"); });
+}
+function pick(i) {
+  const it = sugItems[i];
+  if (!it) return;
+  inputEl.value = it.value;
+  closeSuggest();
+  if (it.run) runAnalysis(); else { inputEl.focus(); openSuggest(); }
+}
+suggestEl.addEventListener("mousedown", function (e) {
+  const b = e.target.closest("button[data-i]");
+  if (b) { e.preventDefault(); pick(parseInt(b.getAttribute("data-i"), 10)); }
+});
+inputEl.addEventListener("input", openSuggest);
+inputEl.addEventListener("focus", openSuggest);
+inputEl.addEventListener("blur", function () { setTimeout(closeSuggest, 120); });
+inputEl.addEventListener("keydown", function (e) {
+  const open = !suggestEl.classList.contains("hidden");
+  if (e.key === "ArrowDown" && open) { e.preventDefault(); sugIndex = (sugIndex + 1) % sugItems.length; highlight(); }
+  else if (e.key === "ArrowUp" && open) { e.preventDefault(); sugIndex = (sugIndex - 1 + sugItems.length) % sugItems.length; highlight(); }
+  else if (e.key === "Escape") { closeSuggest(); }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if (open && sugIndex >= 0) pick(sugIndex);
+    else { closeSuggest(); runAnalysis(); }
+  }
+});
+
+/* Oxirgi qidiruvlar */
+function renderRecent() {
+  const wrap = document.getElementById("recentWrap");
+  const label = document.getElementById("recentLabel");
+  Array.prototype.slice.call(wrap.querySelectorAll("button")).forEach(function (b) { b.remove(); });
+  if (!recent.length) { wrap.classList.add("hidden"); wrap.classList.remove("flex"); return; }
+  wrap.classList.remove("hidden"); wrap.classList.add("flex");
+  label.innerHTML = icon("clock", 14) + "Oxirgi qidiruvlar:";
+  recent.forEach(function (r) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip text-xs bg-white text-slate-600 border border-slate-300 rounded-full px-3 py-1.5";
+    b.textContent = r;
+    b.addEventListener("click", function () { inputEl.value = r; runAnalysis(); });
+    wrap.appendChild(b);
+  });
+}
+function addRecent(q) {
+  recent = [q].concat(recent.filter(function (r) { return normalize(r) !== normalize(q); })).slice(0, 4);
+  store("mt_recent", recent);
+  renderRecent();
+}
+
+/* ================== ISHGA TUSHIRISH ================== */
+function skeleton() {
+  return '<div class="sk h-56 mb-6"></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-6"><div class="sk h-80"></div><div class="sk h-80"></div><div class="sk h-72"></div><div class="sk h-72"></div></div>';
+}
+function runAnalysis() {
+  if (busy) return;
+  const value = inputEl.value.trim();
+  msgEl.classList.add("hidden");
+  if (value.length < 3) {
+    msgEl.textContent = "Kamida shahar yoki mahalla nomini kiriting. Masalan: Marg'ilon shahri, Orolbo'yi MFY.";
+    msgEl.classList.remove("hidden");
+    inputEl.focus();
+    return;
+  }
+  busy = true;
+  btnEl.disabled = true;
+  btnEl.classList.add("opacity-80", "cursor-wait");
+  btnIcon.innerHTML = '<div class="spinner"></div>';
+  btnText.textContent = "Tahlil qilinmoqda...";
+  resultsEl.innerHTML = skeleton();
+  closeSuggest();
+
+  setTimeout(function () {
+    try {
+      editOpen = false;
+      showReport(makeReport(value));
+      addRecent(value);
+    } catch (e) {
+      console.error(e);
+      resultsEl.innerHTML = "";
+      msgEl.textContent = "Hisobotni shakllantirib bo'lmadi. Nomni qayta kiritib ko'ring.";
+      msgEl.classList.remove("hidden");
+    }
+    btnEl.disabled = false;
+    btnEl.classList.remove("opacity-80", "cursor-wait");
+    btnIcon.innerHTML = icon("search", 18);
+    btnText.textContent = "Haqiqiy tahlilni boshlash";
+    busy = false;
+  }, 700);
+}
+
+/* Mavzu */
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").innerHTML = icon(t === "dark" ? "sun" : "moon", 20);
+  store("mt_theme", t);
+}
+
+(function init() {
+  document.getElementById("brandIcon").innerHTML = icon("mapPin", 22, "text-white");
+  document.getElementById("searchIcon").innerHTML = icon("search", 18);
+  btnIcon.innerHTML = icon("search", 18);
+
+  const savedTheme = store("mt_theme");
+  const sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(savedTheme === "dark" || savedTheme === "light" ? savedTheme : (sysDark ? "dark" : "light"));
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  const chips = document.getElementById("chips");
+  SUGGESTIONS.forEach(function (s) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip text-xs bg-white text-slate-600 border border-slate-300 rounded-full px-3 py-1.5";
+    b.textContent = s;
+    b.addEventListener("click", function () { inputEl.value = s; runAnalysis(); });
+    chips.appendChild(b);
+  });
+
+  const savedRecent = store("mt_recent");
+  if (Array.isArray(savedRecent)) recent = savedRecent.filter(function (r) { return typeof r === "string"; }).slice(0, 4);
+  const savedCompare = store("mt_compare");
+  if (Array.isArray(savedCompare)) compareList = savedCompare.filter(function (c) { return c && typeof c.id === "string" && typeof c.pop === "number"; }).slice(0, 4);
+  renderRecent();
+  renderCompare();
+
+  btnEl.addEventListener("click", runAnalysis);
+
+  /* Default holat: Marg'ilon shahri, Orolbo'yi MFY */
+  showReport(makeReport(DEFAULT_QUERY));
+})();
+</script>
+</body>
+</html>
